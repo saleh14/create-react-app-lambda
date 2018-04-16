@@ -1,7 +1,9 @@
 import fetch from 'node-fetch'
 let dotenv = require('dotenv').config()
 const ProxyAgent = require('proxy-agent')
-const slackURL = process.env.SLACK_WEBHOOK_URL
+const slackURL =
+  'https://hooks.slack.com/services/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'
+// const slackURL = process.env.SLACK_WEBHOOK_URL
 const proxyUri = 'http://proxy.mydzit.gov.sa:8080'
 export function handler (event, context, callback) {
   // console.log(fetch)
@@ -15,8 +17,7 @@ export function handler (event, context, callback) {
     const payload = JSON.parse(event.body)
     fetch(slackURL, {
       method: 'POST',
-      body: JSON.stringify({ text: payload.text }),
-      agent: new ProxyAgent(proxyUri)
+      body: JSON.stringify({ text: payload.text })
     })
       .then(() => {
         callback(null, { statusCode: 204 })
