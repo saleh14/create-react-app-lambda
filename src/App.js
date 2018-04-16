@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import netlifyIdentity from 'netlify-identity-widget'
 import './App.css'
 class SlackMessage extends Component {
   constructor (props) {
@@ -8,35 +9,51 @@ class SlackMessage extends Component {
   handleText = e => {
     this.setState({ text: e.target.value })
   }
+  generateHeaders () {
+    const headers = { 'Content-Type': 'application/json' }
+    if (netlifyIdentity.currentUser()) {
+      return netlifyIdentity.currentUser().jwt().then(token => {
+        return { ...headers, Authorization: `Bearer ${token}` }
+      })
+    }
+    return Promise.resolve(headers)
+  }
   handleSubmit = e => {
     e.preventDefault()
     this.myref.current.value = this.state.text
     console.log(this.state.text)
     this.setState({ loading: true })
-    fetch('/.netlify/functions/slack', {
-      method: 'POST',
-      body: JSON.stringify({
-        text: this.state.text
-      })
-    })
-      .then(response => {
-        if (!response.ok) {
-          return response.text().then(err => {
-            throw err
-          })
-        }
-      })
-      .then(() =>
-        this.setState({
-          loading: false,
-          text: null,
-          success: true,
-          error: null
+    this.generateHeaders().then(headers => {
+      fetch('/.netlify/functions/slack', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          text: this.state.text
         })
-      )
-      .catch(err =>
-        this.setState({ loading: false, success: false, error: err.toString() })
-      )
+      })
+        .then(response => {
+          if (!response.ok) {
+            return response.text().then(err => {
+              throw err
+            })
+          }
+        })
+        .then(() =>
+          this.setState({
+            loading: false,
+            text: null,
+            success: true,
+            error: null
+          })
+        )
+        .catch(err =>
+          this.setState({
+            loading: false,
+            success: false,
+            error: err.toString()
+          })
+        )
+    })
   }
   myref = React.createRef()
   render () {
@@ -62,12 +79,20 @@ class SlackMessage extends Component {
   }
 }
 class App extends Component {
+  componentDidMount () {
+    netlifyIdentity.init()
+  }
+  handleIdentity = e => {
+    e.preventDefault()
+    netlifyIdentity.open()
+  }
   render () {
     return (
       <div className='App'>
         <header className='App-header'>
           <h1 className='App-title'>Slack Messenger</h1>
         </header>
+        <p><a href='#' onClick={this.handleIdentity}>User Status</a></p>
         <SlackMessage />
       </div>
     )
