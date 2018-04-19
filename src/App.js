@@ -6,7 +6,9 @@ class SlackMessage extends Component {
     super(props)
     this.state = { loading: false, text: null, error: null, success: false }
   }
-
+  handleText = e => {
+    this.setState({ text: e.target.value })
+  }
   generateHeaders () {
     const headers = { 'Content-Type': 'application/json' }
     if (netlifyIdentity.currentUser()) {
@@ -16,12 +18,9 @@ class SlackMessage extends Component {
     }
     return Promise.resolve(headers)
   }
-
-  handleText = e => {
-    this.setState({ text: e.target.value })
-  }
   handleSubmit = e => {
     e.preventDefault()
+    this.myref.current.value = this.state.text
     console.log(this.state.text)
     this.setState({ loading: true })
     this.generateHeaders().then(headers => {
@@ -39,10 +38,10 @@ class SlackMessage extends Component {
             })
           }
         })
-        .then(() =>
+        .then(text =>
           this.setState({
             loading: false,
-            text: null,
+            text: JSON.stringify(text),
             success: true,
             error: null
           })
@@ -56,12 +55,13 @@ class SlackMessage extends Component {
         )
     })
   }
+  myref = React.createRef()
   render () {
     const { loading, text, error, success } = this.state
     return (
       <form onSubmit={this.handleSubmit}>
         {error && <p><strong>Error sending message: {error}</strong></p>}
-        {success && <p><strong>Done! Message sent to Slack</strong></p>}
+        {success && <p><strong>Done! Message sent to Slack {text}</strong></p>}
         <p>
           <label>
             Your Message: <br />
@@ -72,6 +72,7 @@ class SlackMessage extends Component {
           <button type='submit' disabled={loading}>
             {loading ? 'Sending Slack Message...' : 'Send a Slack Message'}
           </button>
+          <input type='text' ref={this.myref} />
         </p>
       </form>
     )
@@ -85,13 +86,13 @@ class App extends Component {
     e.preventDefault()
     netlifyIdentity.open()
   }
-
   render () {
     return (
       <div className='App'>
         <header className='App-header'>
           <h1 className='App-title'>Slack Messenger</h1>
         </header>
+        <p><a href='#' onClick={this.handleIdentity}>User Status</a></p>
         <SlackMessage />
         <p><a href='#' onClick={this.handleIdentity}>User Status</a></p>
       </div>
