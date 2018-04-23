@@ -1,6 +1,8 @@
 import React, { Component } from 'react'
 import netlifyIdentity from 'netlify-identity-widget'
+import Form from './Form'
 import './App.css'
+
 class SlackMessage extends Component {
   constructor (props) {
     super(props)
@@ -79,12 +81,19 @@ class SlackMessage extends Component {
   }
 }
 class App extends Component {
+  state = {
+    fields: { hello: 'helloo' }
+  }
   componentDidMount () {
     netlifyIdentity.init()
   }
   handleIdentity = e => {
     e.preventDefault()
     netlifyIdentity.open()
+  }
+
+  getFields (fields) {
+    this.setState({ fields })
   }
   render () {
     return (
@@ -94,7 +103,7 @@ class App extends Component {
         </header>
         <p><a href='#' onClick={this.handleIdentity}>User Status</a></p>
         <SlackMessage />
-        <p><a href='#' onClick={this.handleIdentity}>User Status</a></p>
+        <Form getFields={fields => this.getFields(fields)} />
       </div>
     )
   }

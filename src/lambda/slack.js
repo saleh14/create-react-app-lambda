@@ -16,14 +16,15 @@ export function handler (event, context, callback) {
       body: 'Unsupported Request Method'
     })
   }
+
   const claims = context.clientContext && context.clientContext.user
   console.dir(context)
-  if (!claims) {
+  /*   if (!claims) {
     return callback(null, {
       statusCode: 401,
       body: 'You must be signed in to call this function'
     })
-  }
+  } */
   try {
     const gtoken = new GoogleToken({
       email: process.env.SERVICE_ACC_ID,
@@ -35,15 +36,23 @@ export function handler (event, context, callback) {
       .getToken()
       .then(accessToken => {
         console.log(accessToken)
+        const valueInputOption = 'USER_ENTERED'
         const sheets = google.sheets({ version: 'v4' })
-        sheets.spreadsheets.values.get(
+        const rowValues = JSON.parse(event.body)
+        console.log(rowValues.text)
+        let body = {
+          values: [[2, 3, 4, 6]]
+        }
+        sheets.spreadsheets.values.append(
           {
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${accessToken}`
             },
-            spreadsheetId: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
-            range: 'Class Data!A2:E'
+            spreadsheetId: '1fIEKhFIa9aRkGTM5NxesoNWBcG57-zExbkp7JtKNAtI',
+            valueInputOption,
+            range: 'A2',
+            resource: body
           },
           (err, resp) => {
             if (err) {
@@ -52,23 +61,11 @@ export function handler (event, context, callback) {
                 body: 'Internal Server Error 2: ' + err + `\n${slackURL}`
               })
             }
-            const data = resp && resp.data ? resp.data : { values: [] }
-            console.dir(data)
-            const rows = data.values
-            let excelData = ''
-            if (rows.length) {
-              console.log()
-              excelData += 'Name, Major:'
-              // Print columns A and E, which correspond to indices 0 and 4.
-              rows.map(row => {
-                excelData += `${row[0]}, ${row[4]}\n`
-              })
-            } else {
-              excelData = 'No data found.'
-            }
+            console.dir(resp)
+            console.log('%d cells updated.', resp.totalUpdatedCells)
             callback(null, {
               statusCode: 204,
-              body: JSON.stringify(data)
+              body: JSON.stringify(resp.totalUpdatedCells)
             })
           }
         )
@@ -76,7 +73,7 @@ export function handler (event, context, callback) {
       .catch(e => {
         callback(null, {
           statusCode: 500,
-          body: 'Internal Server Error 3: ' + err + `\n${slackURL}`
+          body: 'Internal Server Error 3: ' + e + `\n${slackURL}`
         })
       })
   } catch (e) {
