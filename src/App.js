@@ -6,11 +6,15 @@ import './App.css'
 class SlackMessage extends Component {
   constructor (props) {
     super(props)
-    this.state = { loading: false, text: null, error: null, success: false }
+    this.state = { loading: false, fields: null, error: null, success: false }
+  }
+  getFields (fields) {
+    this.setState({ fields: fields })
   }
   handleText = e => {
     this.setState({ text: e.target.value })
   }
+
   generateHeaders () {
     const headers = { 'Content-Type': 'application/json' }
     if (netlifyIdentity.currentUser()) {
@@ -22,6 +26,16 @@ class SlackMessage extends Component {
   }
   handleSubmit = e => {
     e.preventDefault()
+    // testing fields to value format
+
+    const { fields } = this.state
+    const row = Object.keys(fields).reduce(
+      (row, k) => row.concat([fields[k]]),
+      []
+    )
+    console.log(row)
+
+    // end of testing of fields
     this.myref.current.value = this.state.text
     console.log(this.state.text)
     this.setState({ loading: true })
@@ -30,7 +44,7 @@ class SlackMessage extends Component {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          text: this.state.text
+          row
         })
       })
         .then(response => {
@@ -61,22 +75,26 @@ class SlackMessage extends Component {
   render () {
     const { loading, text, error, success } = this.state
     return (
-      <form onSubmit={this.handleSubmit}>
-        {error && <p><strong>Error sending message: {error}</strong></p>}
-        {success && <p><strong>Done! Message sent to Slack {text}</strong></p>}
-        <p>
-          <label>
-            Your Message: <br />
-            <textarea onChange={this.handleText} value={text} />
-          </label>
-        </p>
-        <p>
-          <button type='submit' disabled={loading}>
-            {loading ? 'Sending Slack Message...' : 'Send a Slack Message'}
-          </button>
-          <input type='text' ref={this.myref} />
-        </p>
-      </form>
+      <React.Fragment>
+        <Form getFields={fields => this.getFields(fields)} />
+        <form onSubmit={this.handleSubmit}>
+          {error && <p><strong>Error sending message: {error}</strong></p>}
+          {success &&
+            <p><strong>Done! Message sent to Slack {text}</strong></p>}
+          <p>
+            <label>
+              Your Message: <br />
+              <textarea onChange={this.handleText} value={text || ''} />
+            </label>
+          </p>
+          <p>
+            <button type='submit' disabled={loading}>
+              {loading ? 'Sending Slack Message...' : 'Send a Slack Message'}
+            </button>
+            <textarea ref={this.myref} />
+          </p>
+        </form>
+      </React.Fragment>
     )
   }
 }
@@ -92,9 +110,6 @@ class App extends Component {
     netlifyIdentity.open()
   }
 
-  getFields (fields) {
-    this.setState({ fields })
-  }
   render () {
     return (
       <div className='App'>
@@ -103,7 +118,6 @@ class App extends Component {
         </header>
         <p><a href='#' onClick={this.handleIdentity}>User Status</a></p>
         <SlackMessage />
-        <Form getFields={fields => this.getFields(fields)} />
       </div>
     )
   }

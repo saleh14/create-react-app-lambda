@@ -19,12 +19,12 @@ export function handler (event, context, callback) {
 
   const claims = context.clientContext && context.clientContext.user
   console.dir(context)
-  /*   if (!claims) {
+  if (!claims) {
     return callback(null, {
       statusCode: 401,
       body: 'You must be signed in to call this function'
     })
-  } */
+  }
   try {
     const gtoken = new GoogleToken({
       email: process.env.SERVICE_ACC_ID,
@@ -39,9 +39,9 @@ export function handler (event, context, callback) {
         const valueInputOption = 'USER_ENTERED'
         const sheets = google.sheets({ version: 'v4' })
         const rowValues = JSON.parse(event.body)
-        console.log(rowValues.text)
+        console.log(rowValues.row)
         let body = {
-          values: [[2, 3, 4, 6]]
+          values: [rowValues.row]
         }
         sheets.spreadsheets.values.append(
           {
@@ -61,7 +61,7 @@ export function handler (event, context, callback) {
                 body: 'Internal Server Error 2: ' + err + `\n${slackURL}`
               })
             }
-            console.dir(resp)
+            // console.dir(resp)
             console.log('%d cells updated.', resp.totalUpdatedCells)
             callback(null, {
               statusCode: 204,
