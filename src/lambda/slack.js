@@ -19,12 +19,12 @@ export function handler (event, context, callback) {
 
   const claims = context.clientContext && context.clientContext.user
   console.dir(context)
-  if (!claims) {
+/*   if (!claims) {
     return callback(null, {
       statusCode: 401,
       body: 'You must be signed in to call this function'
     })
-  }
+  } */
   try {
     const gtoken = new GoogleToken({
       email: process.env.SERVICE_ACC_ID,
